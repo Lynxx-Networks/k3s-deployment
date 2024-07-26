@@ -1,6 +1,7 @@
 ---
 - name: Pre tasks
   hosts: all
+  become_method: sudo
   pre_tasks:
     - name: Verify Ansible is version 2.11 or above. (If this fails you may need to update Ansible)
       assert:

@@ -17,6 +17,19 @@
     mode: 0644
   when: ansible_hostname == hostvars[groups[group_name_master | default('master')][0]]['ansible_hostname']
 
+- name: Install apache netaddr ubun
+  ansible.builtin.apt:
+    name: python3-netaddr
+    state: present
+  when: ansible_os_family in [ "Debian" ]
+
+- name: Install netaddr
+  community.general.zypper:
+    name: python3-netaddr
+    state: present
+  when: ansible_os_family in [ "Suse" ]
+
+
 - name: Copy vip manifest to first master
   template:
     src: "vip.yaml.j2"
