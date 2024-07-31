@@ -9,9 +9,43 @@
   tags: cilium
   when: cilium_iface is defined
 
+- name: Pause for 10 seconds
+  pause:
+    seconds: 10
+  delegate_to: localhost
+
+
+- name: Check if k3s-ha2 has master taint
+  command: kubectl get node k3s-ha2 -o jsonpath='{.spec.taints[?(@.key=="node-role.kubernetes.io/master")].effect}'
+  register: taint_check
+  failed_when: false
+  changed_when: false
+
+- name: Remove taint from k3s-ha2
+  command: kubectl taint nodes k3s-ha2 node-role.kubernetes.io/master:NoSchedule-
+  when: "'NoSchedule' in taint_check.stdout"
+  ignore_errors: true
+
+- name: Check if k3s-ha1 has master taint
+  command: kubectl get node k3s-ha1 -o jsonpath='{.spec.taints[?(@.key=="node-role.kubernetes.io/master")].effect}'
+  register: taint_check_ha1
+  failed_when: false
+  changed_when: false
+
+- name: Remove taint from k3s-ha1
+  command: kubectl taint nodes k3s-ha1 node-role.kubernetes.io/master:NoSchedule-
+  when: "'NoSchedule' in taint_check_ha1.stdout"
+  ignore_errors: true
+
+
 - name: Deploy metallb pool
   include_tasks: metallb.yml
   tags: metallb
+  when: kube_vip_lb_ip_range is not defined and (cilium_bgp is not defined or cilium_iface is not defined)
+
+- name: Deploy nginx ingress controller
+  include_tasks: nginx.yml
+  tags: nginx
   when: kube_vip_lb_ip_range is not defined and (cilium_bgp is not defined or cilium_iface is not defined)
 
 - name: Remove tmp directory used for manifests
